@@ -211,20 +211,20 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-Start the gRPC server in one terminal:
+Start the default gRPC server in one terminal:
 
 ```bash
 ./build/vectordb_server
 ```
 
-In another terminal, from the project root:
+In another terminal, from the project root, run the end-to-end demo:
 
 ```bash
 source .venv/bin/activate
 python demo.py
 ```
 
-The end-to-end demo connects to the server on `127.0.0.1:50053`. Start a dedicated demo server for it:
+The end-to-end demo connects to `127.0.0.1:50053`. Start a dedicated demo server for it:
 
 ```bash
 ./build/vectordb_server \
@@ -248,12 +248,14 @@ The sample dataset uses fruit and vegetable vectors for an easy-to-understand de
 
 ### Python SDK example
 
+With a fresh 3-dimensional cosine server running on `127.0.0.1:50051`:
+
 ```python
 from vectordb import VectorDBClient
 
 with VectorDBClient("127.0.0.1:50051") as client:
     client.insert(
-        vector_id=1001,
+        id=1001,
         vector=[1.0, 0.0, 0.0],
         metadata={"category": "fruit", "name": "apple"},
     )
@@ -265,10 +267,10 @@ with VectorDBClient("127.0.0.1:50051") as client:
     )
 
     for result in results:
-        print(result)
+        print(f"ID={result.id}, distance={result.distance:.6f}")
 ```
 
-This example assumes a fresh server using the default 3-dimensional cosine configuration. The demo uses fixed IDs, so run it against a clean demo store if you need to reproduce the initial output exactly.
+This example assumes an empty server store. If ID `1001` already exists, use a fresh storage directory or choose a different ID.
 
 ## Testing
 
