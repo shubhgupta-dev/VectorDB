@@ -20,7 +20,7 @@ BENCHMARK_CSV = ROOT / "data" / "ui_benchmarks.csv"
 
 st.set_page_config(
     page_title="VectorDB Explorer",
-    page_icon="➡️DB"
+    # page_icon
     layout="wide",
 )
 
