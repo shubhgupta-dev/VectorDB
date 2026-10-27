@@ -1,0 +1,74 @@
+name: VectorDB CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            libgrpc++-dev \
+            libprotobuf-dev \
+            protobuf-compiler \
+            protobuf-compiler-grpc \
+            python3 \
+            python3-venv \
+            python3-pip
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build all C++ targets
+        run: cmake --build build -j2
+
+      - name: Set up Python environment
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -e .
+          .venv/bin/python -m pip install pytest
+
+      - name: Run standalone C++ demo
+        run: ./build/vectordb_demo
+
+      - name: Run Python SDK integration tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./build/vectordb_server \
+            127.0.0.1:50051 3 cosine data/ci_store \
+            > /tmp/vectordb-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 30); do
+            if .venv/bin/python -c \
+              'import grpc; grpc.channel_ready_future(grpc.insecure_channel("127.0.0.1:50051")).result(timeout=1)' \
+              2>/dev/null; then
+              break
+            fi
+
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat /tmp/vectordb-server.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          .venv/bin/python -m pytest tests/test_sdk.py -v
