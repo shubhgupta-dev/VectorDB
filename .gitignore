@@ -1,0 +1,25 @@
+# CMake build output
+/build/
+/cmake-build-*/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Local database data and runtime files
+/data/
+*.wal
+*.snapshot
+
+# Benchmark output generated locally
+benchmarks/*.csv
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
